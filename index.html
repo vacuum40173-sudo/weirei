@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>韋瑞畫廊 v6.9</title>
+    <title>韋瑞畫廊 v6.9.1</title>
     <style>
         :root { --primary: #3498db; --secondary: #2c3e50; --accent: #e67e22; --success: #27ae60; --bg: #f4f7f6; }
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--bg); padding: 10px; display: flex; flex-direction: column; align-items: center; margin: 0; }
@@ -17,7 +17,6 @@
         .live-price-val { font-size: 2.2rem; font-weight: bold; color: var(--accent); }
         .btn { border: none; width: 100%; padding: 14px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; color: white; margin-top: 8px; }
         .btn-add { background-color: var(--success); }
-        .btn-checkout { background-color: var(--secondary); }
         .cart-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
         .cart-table td { padding: 10px 5px; border-bottom: 1px solid #eee; }
         .hidden { display: none !important; }
@@ -27,9 +26,9 @@
 <body>
 
 <div class="card no-print">
-    <h2>韋瑞畫廊 v6.9 (測試版)</h2>
+    <h2>韋瑞畫廊 v6.9.1</h2>
     <div style="background: #fcfcfc; border: 1px solid #eee; padding: 12px; border-radius: 8px;">
-        <label>👤 客戶基本資料</label>
+        <label>👤 客戶資料</label>
         <div class="row"><input type="text" id="cust_name" placeholder="姓名"><input type="tel" id="cust_phone" placeholder="電話"></div>
     </div>
 </div>
@@ -51,8 +50,8 @@
         <div style="flex:1;"><label>畫心寬 (三位數)</label><input type="number" id="W_in" placeholder="000" oninput="runCalc()" inputmode="numeric"></div>
     </div>
     <div class="row">
-        <div style="flex:1;"><label>預留長邊 (尺)</label><input type="number" id="padL" value="1.0" step="0.1" oninput="runCalc()"></div>
-        <div style="flex:1;"><label>預留短邊 (尺)</label><input type="number" id="padW" value="0.5" step="0.1" oninput="runCalc()"></div>
+        <div style="flex:1;"><label>預留長邊 (三位數)</label><input type="number" id="padL" value="100" oninput="runCalc()" inputmode="numeric"></div>
+        <div style="flex:1;"><label>預留短邊 (三位數)</label><input type="number" id="padW" value="050" oninput="runCalc()" inputmode="numeric"></div>
     </div>
 
     <div id="normal-options" class="option-group">
@@ -101,7 +100,7 @@
     </div>
     <div class="no-print">
         <button class="btn" style="background:#3498db;" onclick="window.print()">列印單據 / 截圖存檔</button>
-        <button class="btn" style="background:#95a5a6; margin-top:10px;" onclick="location.reload()">清空重新輸入</button>
+        <button class="btn" style="background:#95a5a6; margin-top:10px;" onclick="location.reload()">下一張新單</button>
     </div>
 </div>
 
@@ -113,13 +112,12 @@
 
     function runCalc() {
         const mode = document.getElementById('mode').value;
-        // 取得畫心尺寸並轉換為「台尺」 (輸入 123 代表 1.23 尺)
+        
+        // 全部統一為三位數輸入邏輯，除以 100 得到「尺」
         const L = (parseFloat(document.getElementById('L_in').value) || 0) / 100;
         const W = (parseFloat(document.getElementById('W_in').value) || 0) / 100;
-        
-        // 預留邊 (這部分維持手動輸入尺)
-        const pL = parseFloat(document.getElementById('padL').value) || 0;
-        const pW = parseFloat(document.getElementById('padW').value) || 0;
+        const pL = (parseFloat(document.getElementById('padL').value) || 0) / 100;
+        const pW = (parseFloat(document.getElementById('padW').value) || 0) / 100;
         
         if (L <= 0 || W <= 0) { 
             document.getElementById('priceTxt').innerText="0"; 
@@ -127,26 +125,21 @@
             return; 
         }
 
-        // 總尺寸 (台尺)
         const tL = L + pL; const tW = W + pW;
-        // 轉換公分與英寸 (供顯示與計算壓克力用)
         const Lcm = tL * TAI_TO_CM; const Wcm = tW * TAI_TO_CM;
         const Linch = tL * TAI_TO_INCH; const Winch = tW * TAI_TO_INCH;
-        const cai = Math.ceil((Linch * Winch) / 144); // 壓克力採無條件進位才數
+        const cai = Math.ceil((Linch * Winch) / 144);
         
         document.getElementById('sizeDetail').innerText = `框內尺寸：${Lcm.toFixed(1)} x ${Wcm.toFixed(1)} cm (${tL.toFixed(2)} x ${tW.toFixed(2)} 尺)`;
 
         if (mode === 'normal') {
             const base = document.getElementById('baseRate').value;
             if (base === 'inner_outer') {
-                // 國畫內外框邏輯：(長+寬) * 2 * 250
                 currentPrice = Math.round((tL + tW) * 2 * 250);
                 document.getElementById('acyRow').classList.add('hidden');
             } else {
-                // 一般國畫框公式：(長+寬) * 基數
                 currentPrice = Math.round((tL + tW) * parseInt(base));
                 document.getElementById('acyRow').classList.remove('hidden');
-                // 壓克力費用 120/才
                 if(document.getElementById('addAcy').checked) {
                     currentPrice += Math.round(cai * 120);
                 }
@@ -155,17 +148,15 @@
         else if (mode === 'oil') {
             const type = document.getElementById('oilType').value;
             const base = parseInt(document.getElementById('oilFrameBase').value);
-            // 油畫計算：底板費用(50/才) + 外框費用(周長*基數) + 內框(12/周長)
             let baseP = (type === 'direct') ? 0 : Math.round(cai * 50);
             let frameP = Math.round((Linch + Winch) * base);
             let inP = (type === 'inout') ? Math.round((Linch + Winch) * 12) : 0;
             currentPrice = baseP + frameP + inP;
         } 
         else { 
-            currentPrice = 350; // 裱板/立軸預設低消，待詳細公式
+            currentPrice = 350;
         }
 
-        // 最低消費 350
         if(currentPrice < 350) currentPrice = 350;
         document.getElementById('priceTxt').innerText = currentPrice.toLocaleString();
     }
