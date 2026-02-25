@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>韋瑞畫廊 v6.9.1</title>
+    <title>韋瑞畫廊 v6.9</title>
     <style>
         :root { --primary: #3498db; --secondary: #2c3e50; --accent: #e67e22; --success: #27ae60; --bg: #f4f7f6; }
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--bg); padding: 10px; display: flex; flex-direction: column; align-items: center; margin: 0; }
@@ -17,6 +17,7 @@
         .live-price-val { font-size: 2.2rem; font-weight: bold; color: var(--accent); }
         .btn { border: none; width: 100%; padding: 14px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; color: white; margin-top: 8px; }
         .btn-add { background-color: var(--success); }
+        .btn-checkout { background-color: var(--secondary); }
         .cart-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
         .cart-table td { padding: 10px 5px; border-bottom: 1px solid #eee; }
         .hidden { display: none !important; }
@@ -26,10 +27,14 @@
 <body>
 
 <div class="card no-print">
-    <h2>韋瑞畫廊 v6.9.1</h2>
+    <h2>韋瑞畫廊 v6.9</h2>
     <div style="background: #fcfcfc; border: 1px solid #eee; padding: 12px; border-radius: 8px;">
-        <label>👤 客戶資料</label>
+        <label>👤 客戶基本資料</label>
         <div class="row"><input type="text" id="cust_name" placeholder="姓名"><input type="tel" id="cust_phone" placeholder="電話"></div>
+        <div class="row">
+            <div style="flex:1;"><label style="font-size:11px;">收件日期</label><input type="date" id="date_receive"></div>
+            <div style="flex:1;"><label style="font-size:11px;">預計交件</label><input type="date" id="date_deliver"></div>
+        </div>
     </div>
 </div>
 
@@ -38,20 +43,20 @@
     <div class="section">
         <label>報價模式</label>
         <select id="mode" onchange="toggleMode()">
-            <option value="normal" selected>國畫裝框 (周長計價)</option>
+            <option value="normal" selected>國畫裝框 (計價)</option>
             <option value="oil">油畫裝框 (堆疊計價)</option>
             <option value="board">國畫裱板 (面積計價)</option>
             <option value="scroll">立軸掛軸</option>
         </select>
     </div>
 
-    <div class="row" style="margin-top:10px;">
-        <div style="flex:1;"><label>畫心長 (三位數)</label><input type="number" id="L_in" placeholder="000" oninput="runCalc()" inputmode="numeric"></div>
-        <div style="flex:1;"><label>畫心寬 (三位數)</label><input type="number" id="W_in" placeholder="000" oninput="runCalc()" inputmode="numeric"></div>
+    <div class="row">
+        <div style="flex:1;"><label>畫心長 (三位數)</label><input type="number" id="L_in" oninput="runCalc()" inputmode="numeric"></div>
+        <div style="flex:1;"><label>畫心寬 (三位數)</label><input type="number" id="W_in" oninput="runCalc()" inputmode="numeric"></div>
     </div>
     <div class="row">
-        <div style="flex:1;"><label>預留長邊 (三位數)</label><input type="number" id="padL" value="100" oninput="runCalc()" inputmode="numeric"></div>
-        <div style="flex:1;"><label>預留短邊 (三位數)</label><input type="number" id="padW" value="050" oninput="runCalc()" inputmode="numeric"></div>
+        <div style="flex:1;"><label>預留單邊(長)</label><input type="number" id="padL" value="100" oninput="runCalc()"></div>
+        <div style="flex:1;"><label>預留單邊(寬)</label><input type="number" id="padW" value="50" oninput="runCalc()"></div>
     </div>
 
     <div id="normal-options" class="option-group">
@@ -60,11 +65,9 @@
             <option value="250">國畫框 (250)</option>
             <option value="280">2寸特選手工框 (280)</option>
             <option value="300">3寸特選手工框 (300)</option>
-            <option value="inner_outer">國畫內外框 (250 - 含壓克力)</option>
+            <option value="inner_outer">國畫內外框 (250 - 含克力)</option>
         </select>
-        <div id="acyRow" style="margin-top:10px;">
-            <label style="font-weight:normal;"><input type="checkbox" id="addAcy" onchange="runCalc()" style="width:auto;"> 加壓克力 (120/才)</label>
-        </div>
+        <div id="acyRow" style="margin-top:10px;"><label style="font-weight:normal;"><input type="checkbox" id="addAcy" onchange="runCalc()" style="width:auto;"> 加壓克力 (120/才)</label></div>
     </div>
 
     <div id="oil-options" class="option-group hidden">
@@ -83,7 +86,7 @@
         </select>
     </div>
 
-    <div class="section"><label>📝 單項備註</label><input type="text" id="item_note" placeholder="如：加金邊、特殊顏色..."></div>
+    <div class="section"><label>📝 單項備註 (客製需求)</label><input type="text" id="item_note" placeholder="如：加金邊、特殊顏色..."></div>
 
     <div class="live-price-box">
         <div class="live-price-val">NT$ <span id="priceTxt">0</span></div>
@@ -96,15 +99,17 @@
     <h3>📝 報價清單</h3>
     <table class="cart-table" id="cartTable"></table>
     <div style="text-align:right; font-size:1.3rem; font-weight:bold; color:#c0392b; margin-top:15px; border-top:2px solid #eee; padding-top:10px;">
-        總計：NT$ <span id="totalTxt">0</span>
+        總計金額：NT$ <span id="totalTxt">0</span>
     </div>
     <div class="no-print">
-        <button class="btn" style="background:#3498db;" onclick="window.print()">列印單據 / 截圖存檔</button>
-        <button class="btn" style="background:#95a5a6; margin-top:10px;" onclick="location.reload()">下一張新單</button>
+        <button id="finalBtn" class="btn btn-checkout" onclick="processCheckout()">確認結單並同步雲端</button>
+        <button id="resetBtn" class="btn hidden" style="background:#f39c12;" onclick="location.reload()">下一張新訂單</button>
+        <button class="btn" style="background:#3498db;" onclick="window.print()">列印單據</button>
     </div>
 </div>
 
 <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxIGJhbS903H3fPdj4GSmX2-KwkjCP_ZWv676VqWnbddhw2EbvKHxQ3yqHRFGsAx4J9/exec';
     const TAI_TO_CM = 30.3;
     const TAI_TO_INCH = 11.93;
     let cart = [];
@@ -112,37 +117,34 @@
 
     function runCalc() {
         const mode = document.getElementById('mode').value;
-        
-        // 全部統一為三位數輸入邏輯，除以 100 得到「尺」
         const L = (parseFloat(document.getElementById('L_in').value) || 0) / 100;
         const W = (parseFloat(document.getElementById('W_in').value) || 0) / 100;
         const pL = (parseFloat(document.getElementById('padL').value) || 0) / 100;
         const pW = (parseFloat(document.getElementById('padW').value) || 0) / 100;
         
-        if (L <= 0 || W <= 0) { 
-            document.getElementById('priceTxt').innerText="0"; 
-            document.getElementById('sizeDetail').innerText = "";
-            return; 
-        }
+        if (L <= 0 || W <= 0) { currentPrice = 0; document.getElementById('priceTxt').innerText="0"; return; }
 
-        const tL = L + pL; const tW = W + pW;
+        // 核心修正：畫心尺寸 + (單邊預留 * 2) = 實體作品總尺寸
+        const tL = L + (pL * 2); 
+        const tW = W + (pW * 2);
+        
         const Lcm = tL * TAI_TO_CM; const Wcm = tW * TAI_TO_CM;
         const Linch = tL * TAI_TO_INCH; const Winch = tW * TAI_TO_INCH;
-        const cai = Math.ceil((Linch * Winch) / 144);
+        const cai = (Linch * Winch) / 144;
         
-        document.getElementById('sizeDetail').innerText = `框內尺寸：${Lcm.toFixed(1)} x ${Wcm.toFixed(1)} cm (${tL.toFixed(2)} x ${tW.toFixed(2)} 尺)`;
+        document.getElementById('sizeDetail').innerText = `作品外徑：${Lcm.toFixed(1)}x${Wcm.toFixed(1)}cm (${tL.toFixed(2)}x${tW.toFixed(2)}尺)`;
 
         if (mode === 'normal') {
             const base = document.getElementById('baseRate').value;
             if (base === 'inner_outer') {
+                // 國畫內外框：(長+寬) * 2 * 250
                 currentPrice = Math.round((tL + tW) * 2 * 250);
                 document.getElementById('acyRow').classList.add('hidden');
             } else {
+                // 一般國畫框：(長+寬) * 基數
                 currentPrice = Math.round((tL + tW) * parseInt(base));
                 document.getElementById('acyRow').classList.remove('hidden');
-                if(document.getElementById('addAcy').checked) {
-                    currentPrice += Math.round(cai * 120);
-                }
+                if(document.getElementById('addAcy').checked) currentPrice += Math.round(cai * 120);
             }
         } 
         else if (mode === 'oil') {
@@ -152,9 +154,6 @@
             let frameP = Math.round((Linch + Winch) * base);
             let inP = (type === 'inout') ? Math.round((Linch + Winch) * 12) : 0;
             currentPrice = baseP + frameP + inP;
-        } 
-        else { 
-            currentPrice = 350;
         }
 
         if(currentPrice < 350) currentPrice = 350;
@@ -172,37 +171,33 @@
         if(currentPrice <= 0) return;
         const mName = document.getElementById('mode').options[document.getElementById('mode').selectedIndex].text;
         const note = document.getElementById('item_note').value;
-        cart.push({ 
-            title: mName, 
-            price: currentPrice, 
-            spec: document.getElementById('sizeDetail').innerText, 
-            note: note ? `(${note})` : "" 
-        });
+        cart.push({ title: mName, price: currentPrice, spec: document.getElementById('sizeDetail').innerText, note: note ? `(${note})` : "" });
         renderCart();
         document.getElementById('item_note').value = "";
     }
 
     function renderCart() {
-        const table = document.getElementById('cartTable'); 
-        table.innerHTML = ""; 
-        let total = 0;
+        const table = document.getElementById('cartTable'); table.innerHTML = ""; let total = 0;
         cart.forEach((it, idx) => {
             total += it.price;
-            table.innerHTML += `<tr>
-                <td style="padding:8px; border-bottom:1px solid #eee;">
-                    <b>${it.title}</b><br>
-                    <small>${it.spec} ${it.note}</small>
-                </td>
-                <td align="right">${it.price.toLocaleString()}</td>
-                <td align="right">
-                    <button onclick="cart.splice(${idx},1);renderCart()" style="color:red;border:none;background:none;font-size:1.2rem;cursor:pointer;">×</button>
-                </td>
-            </tr>`;
+            table.innerHTML += `<tr><td style="padding:8px; border-bottom:1px solid #eee;"><b>${it.title}</b><br><small>${it.spec} ${it.note}</small></td><td align="right">${it.price.toLocaleString()}</td><td align="right"><button onclick="cart.splice(${idx},1);renderCart()" style="color:red;border:none;background:none;cursor:pointer;">❌</button></td></tr>`;
         });
         document.getElementById('totalTxt').innerText = total.toLocaleString();
     }
 
+    async function processCheckout() {
+        if(cart.length === 0) return;
+        const order = { name: document.getElementById('cust_name').value || "未填", phone: document.getElementById('cust_phone').value || "未填", date: document.getElementById('date_receive').value, total: document.getElementById('totalTxt').innerText, items: cart };
+        try {
+            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(order) });
+            alert("✅ 同步成功！");
+        } catch (e) { alert("⚠️ 雲端失敗"); }
+        document.getElementById('finalBtn').classList.add('hidden');
+        document.getElementById('resetBtn').classList.remove('hidden');
+    }
+
     window.onload = function() {
+        const d = new Date(); document.getElementById('date_receive').value = d.toISOString().split('T')[0];
         toggleMode();
     };
 </script>
